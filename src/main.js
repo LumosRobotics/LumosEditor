@@ -561,14 +561,7 @@ ipcMain.handle('initialize-project', async (event, workspacePath) => {
     // Create .lumos_ws file with project metadata
     const projectConfig = {
       name: path.basename(workspacePath),
-      created: new Date().toISOString(),
-      version: "1.0.0",
-      type: "lumos-mcu-project",
-      settings: {
-        defaultBoard: "arduino-uno",
-        buildPath: "./build",
-        srcPath: "./src"
-      }
+      created: new Date().toISOString()
     };
 
     fs.writeFileSync(lumosFile, JSON.stringify(projectConfig, null, 2));

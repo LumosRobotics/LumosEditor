@@ -518,27 +518,22 @@ body.no-workspace .resize-handle {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    opacity: 0.85;
 }
 
-/* Fix for icons without embedded fill colors */
-.file-icon path:not([fill]) {
-    fill: var(--text-primary);
+/* Default fill for icons without embedded colors - dark theme */
+.file-icon path:not([fill]),
+.file-icon circle:not([fill]),
+.file-icon rect:not([fill]),
+.file-icon polygon:not([fill]) {
+    fill: #cccccc !important;
 }
 
-/* Dark theme - ensure colored icons remain visible */
-body .file-icon {
-    filter: brightness(1.1);
-}
-
-/* Light theme - adjust icon brightness */
-body.light-theme .file-icon {
-    filter: brightness(0.85) contrast(1.1);
-}
-
-/* Light theme - icons without fill colors */
-body.light-theme .file-icon path:not([fill]) {
-    fill: var(--text-secondary);
+/* Light theme - darker fill for icons without embedded colors */
+body.light-theme .file-icon path:not([fill]),
+body.light-theme .file-icon circle:not([fill]),
+body.light-theme .file-icon rect:not([fill]),
+body.light-theme .file-icon polygon:not([fill]) {
+    fill: #666666 !important;
 }
 
 .file-name {
