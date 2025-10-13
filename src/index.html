@@ -18,6 +18,25 @@
                         <div class="toolbar-dropdown-item" id="toolbar-open-folder">Open Folder</div>
                     </div>
                 </div>
+                <div class="toolbar-menu">
+                    <button class="toolbar-menu-btn" id="edit-menu-btn">Edit</button>
+                    <div class="toolbar-dropdown hidden" id="edit-dropdown">
+                        <div class="toolbar-dropdown-item has-submenu" id="theme-menu-item">
+                            <span>Theme</span>
+                            <span class="submenu-arrow">▶</span>
+                            <div class="toolbar-submenu hidden" id="theme-submenu">
+                                <div class="toolbar-dropdown-item" id="theme-dark">
+                                    <span class="theme-indicator">●</span>
+                                    <span>Dark Theme</span>
+                                </div>
+                                <div class="toolbar-dropdown-item" id="theme-light">
+                                    <span class="theme-indicator"></span>
+                                    <span>Light Theme</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <button id="init-project-btn" class="toolbar-btn init-project-btn hidden">Initialize project here</button>
                 <button id="compile-btn" class="toolbar-btn compile-btn">Compile</button>
                 <button id="flash-btn" class="toolbar-btn flash-btn">Flash</button>

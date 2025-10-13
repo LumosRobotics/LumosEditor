@@ -1,0 +1,6 @@
+[submodule "third_party/vscode-icons"]
+	path = third_party/vscode-icons
+	url = git@github.com:vscode-icons/vscode-icons.git
+[submodule "third_party/seti-ui"]
+	path = third_party/seti-ui
+	url = git@github.com:jesseweed/seti-ui.git

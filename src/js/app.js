@@ -11,11 +11,46 @@ class LumosEditor {
         this.contextMenuTarget = null;
         this.contextMenuTargetType = null; // 'file' or 'directory'
         this.currentFontSize = 14;
-        
+        this.iconBasePath = '../third_party/seti-ui/icons/';
+        this.currentTheme = 'dark'; // 'dark' or 'light'
+
         this.init();
     }
 
+    getFileIcon(fileName, extension) {
+        const iconMap = {
+            '.ino': 'c.svg',           // Arduino files use C icon
+            '.cpp': 'cpp.svg',
+            '.c': 'c.svg',
+            '.h': 'c.svg',
+            '.hpp': 'cpp.svg',
+            '.json': 'json.svg',
+            '.js': 'javascript.svg',
+            '.py': 'python.svg',
+            '.md': 'markdown.svg',
+            '.txt': 'default.svg',
+            '.xml': 'xml.svg',
+            '.html': 'html.svg',
+            '.py': 'python.svg',
+            '.rs': 'rust.svg',
+        };
+
+        // Special case for .lumos_ws file
+        if (fileName === '.lumos_ws') {
+            return this.iconBasePath + 'json.svg';
+        }
+
+        const icon = iconMap[extension] || 'default.svg';
+        return this.iconBasePath + icon;
+    }
+
+    getFolderIcon(isExpanded) {
+        // Seti UI uses the same folder icon for both states
+        return this.iconBasePath + 'folder.svg';
+    }
+
     async init() {
+        this.loadTheme();
         this.initMonaco();
         this.setupEventListeners();
         this.setupMenuListeners();
@@ -136,7 +171,7 @@ class LumosEditor {
 
     initMonaco() {
         require.config({ paths: { vs: '../node_modules/monaco-editor/min/vs' } });
-        
+
         require(['vs/editor/editor.main'], () => {
             // Configure Monaco for better C/C++/Arduino support
             monaco.languages.register({ id: 'arduino' });
@@ -168,10 +203,11 @@ class LumosEditor {
                 }
             });
 
+            const monacoTheme = this.currentTheme === 'dark' ? 'vs-dark' : 'vs';
             this.editor = monaco.editor.create(document.getElementById('editor'), {
                 value: '',
                 language: 'plaintext',
-                theme: 'vs-dark',
+                theme: monacoTheme,
                 automaticLayout: true,
                 minimap: { enabled: false },
                 fontSize: 14,
@@ -185,7 +221,7 @@ class LumosEditor {
             // Update status bar on cursor position change
             this.editor.onDidChangeCursorPosition((e) => {
                 const position = e.position;
-                document.getElementById('status-line-col').textContent = 
+                document.getElementById('status-line-col').textContent =
                     `Ln ${position.lineNumber}, Col ${position.column}`;
             });
 
@@ -198,6 +234,7 @@ class LumosEditor {
         // File menu dropdown
         document.getElementById('file-menu-btn').addEventListener('click', (e) => {
             e.stopPropagation();
+            this.hideEditMenu();
             this.toggleFileMenu();
         });
 
@@ -206,13 +243,59 @@ class LumosEditor {
             this.openFolderDialog();
         });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
+        // Edit menu dropdown
+        document.getElementById('edit-menu-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
             this.hideFileMenu();
+            this.toggleEditMenu();
         });
 
-        // Prevent dropdown from closing when clicking inside it
+        // Theme submenu
+        document.getElementById('theme-menu-item').addEventListener('mouseenter', () => {
+            this.showThemeSubmenu();
+        });
+
+        document.getElementById('theme-menu-item').addEventListener('mouseleave', (e) => {
+            // Only hide if not moving to submenu
+            const submenu = document.getElementById('theme-submenu');
+            const rect = submenu.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right ||
+                e.clientY < rect.top || e.clientY > rect.bottom) {
+                setTimeout(() => this.hideThemeSubmenu(), 100);
+            }
+        });
+
+        document.getElementById('theme-submenu').addEventListener('mouseenter', () => {
+            this.showThemeSubmenu();
+        });
+
+        document.getElementById('theme-submenu').addEventListener('mouseleave', () => {
+            this.hideThemeSubmenu();
+        });
+
+        // Theme selection
+        document.getElementById('theme-dark').addEventListener('click', () => {
+            this.setTheme('dark');
+            this.hideEditMenu();
+        });
+
+        document.getElementById('theme-light').addEventListener('click', () => {
+            this.setTheme('light');
+            this.hideEditMenu();
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            this.hideFileMenu();
+            this.hideEditMenu();
+        });
+
+        // Prevent dropdowns from closing when clicking inside them
         document.getElementById('file-dropdown').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        document.getElementById('edit-dropdown').addEventListener('click', (e) => {
             e.stopPropagation();
         });
 
@@ -261,22 +344,15 @@ class LumosEditor {
 
         // Font size keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Debug logging
-            if (e.metaKey || e.ctrlKey) {
-                console.log('Key pressed:', e.key, 'Code:', e.code, 'Shift:', e.shiftKey);
-            }
-            
-            if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+' || (e.shiftKey && e.key === '='))) { 
+
+            if ((e.metaKey || e.ctrlKey) && (e.key === '=' || e.key === '+' || (e.shiftKey && e.key === '='))) {
                 e.preventDefault();
-                console.log('Increasing font size');
                 this.increaseFontSize();
-            } else if ((e.metaKey || e.ctrlKey) && e.key === '-') { 
+            } else if ((e.metaKey || e.ctrlKey) && e.key === '-') {
                 e.preventDefault();
-                console.log('Decreasing font size');
                 this.decreaseFontSize();
-            } else if ((e.metaKey || e.ctrlKey) && e.key === '0') { 
+            } else if ((e.metaKey || e.ctrlKey) && e.key === '0') {
                 e.preventDefault();
-                console.log('Resetting font size');
                 this.resetFontSize();
             }
         });
@@ -288,7 +364,7 @@ class LumosEditor {
         window.electronAPI.onMenuSave(() => this.saveCurrentFile());
         window.electronAPI.onMenuFlash(() => this.flashToDevice());
         window.electronAPI.onMenuSerialMonitor(() => this.showPanel('serial'));
-        
+
         window.electronAPI.onFileOpened((event, { path, content }) => {
             this.openFile(path, content);
         });
@@ -315,7 +391,6 @@ class LumosEditor {
 
     setupWorkspaceListeners() {
         window.electronAPI.onWorkspaceOpened((event, workspace) => {
-            console.log('Workspace opened:', workspace);
             this.currentWorkspace = workspace;
             this.saveRecentDirectory(workspace.path, workspace.name);
             this.updateWorkspaceUI();
@@ -342,7 +417,7 @@ class LumosEditor {
         window.electronAPI.onFileRemoved((event, file) => {
             this.refreshFileTreeFromBackend(); // Refresh file tree from backend
             this.updateInitProjectButton(); // Check if .lumos_ws was removed
-            
+
             // Close tab if the removed file was open
             const tabToClose = Array.from(this.openTabs.entries())
                 .find(([id, tab]) => tab.filePath === file.path);
@@ -421,14 +496,14 @@ class LumosEditor {
 
     setupContextMenu() {
         const contextMenu = document.getElementById('context-menu');
-        
+
         // Handle right-click on file explorer
         document.getElementById('file-explorer').addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            
+
             // Find the target directory (either the clicked directory or the workspace root)
             let targetPath = this.currentWorkspace ? this.currentWorkspace.path : null;
-            
+
             // Check if right-clicked on a file or directory item
             const fileItem = e.target.closest('.file-item');
             if (fileItem) {
@@ -531,6 +606,67 @@ class LumosEditor {
     hideFileMenu() {
         const dropdown = document.getElementById('file-dropdown');
         dropdown.classList.add('hidden');
+    }
+
+    toggleEditMenu() {
+        const dropdown = document.getElementById('edit-dropdown');
+        dropdown.classList.toggle('hidden');
+    }
+
+    hideEditMenu() {
+        const dropdown = document.getElementById('edit-dropdown');
+        const submenu = document.getElementById('theme-submenu');
+        dropdown.classList.add('hidden');
+        submenu.classList.add('hidden');
+    }
+
+    showThemeSubmenu() {
+        const submenu = document.getElementById('theme-submenu');
+        submenu.classList.remove('hidden');
+    }
+
+    hideThemeSubmenu() {
+        const submenu = document.getElementById('theme-submenu');
+        submenu.classList.add('hidden');
+    }
+
+    loadTheme() {
+        // Load saved theme from localStorage, default to dark
+        const savedTheme = localStorage.getItem('lumosTheme') || 'dark';
+        this.currentTheme = savedTheme;
+        this.applyTheme(savedTheme);
+    }
+
+    setTheme(theme) {
+        this.currentTheme = theme;
+
+        // Save theme preference
+        localStorage.setItem('lumosTheme', theme);
+
+        // Apply the theme
+        this.applyTheme(theme);
+    }
+
+    applyTheme(theme) {
+        // Update theme indicators
+        const darkIndicator = document.querySelector('#theme-dark .theme-indicator');
+        const lightIndicator = document.querySelector('#theme-light .theme-indicator');
+
+        if (theme === 'dark') {
+            darkIndicator.textContent = '●';
+            lightIndicator.textContent = '';
+            document.body.classList.remove('light-theme');
+        } else {
+            darkIndicator.textContent = '';
+            lightIndicator.textContent = '●';
+            document.body.classList.add('light-theme');
+        }
+
+        // Update Monaco editor theme if editor is initialized
+        if (this.editor) {
+            const monacoTheme = theme === 'dark' ? 'vs-dark' : 'vs';
+            monaco.editor.setTheme(monacoTheme);
+        }
     }
 
     showNewFileDialog() {
@@ -748,10 +884,10 @@ class LumosEditor {
         const fileName = `Untitled-${Date.now()}.ino`;
         const tabId = this.createTab(fileName, null);
         const tab = this.openTabs.get(tabId);
-        
+
         // Set default Arduino content in the tab's model
         tab.model.setValue('void setup() {\n  \n}\n\nvoid loop() {\n  \n}');
-        
+
         this.switchToTab(tabId);
         this.editor.focus();
     }
@@ -784,12 +920,12 @@ class LumosEditor {
         const tab = this.openTabs.get(this.activeTab);
         const content = tab.model.getValue();
         const result = await window.electronAPI.saveFile(filePath, content);
-        
+
         if (result.success) {
             const tab = this.openTabs.get(this.activeTab);
             tab.filePath = filePath;
             tab.fileName = filePath.split('/').pop();
-            
+
             this.updateTabTitle(this.activeTab);
             this.markTabModified(this.activeTab, false);
             this.updateStatusFile(filePath);
@@ -824,10 +960,10 @@ class LumosEditor {
 
     createTab(fileName, filePath) {
         const tabId = `tab-${Date.now()}`;
-        
+
         // Create a separate Monaco model for this file
         const model = monaco.editor.createModel('', 'plaintext');
-        
+
         // Set up change listener for this specific model
         model.onDidChangeContent(() => {
             // Find the tab that owns this model
@@ -838,7 +974,7 @@ class LumosEditor {
                 }
             }
         });
-        
+
         const tab = {
             id: tabId,
             fileName,
@@ -857,9 +993,9 @@ class LumosEditor {
             <span class="tab-name">${fileName}</span>
             <button class="tab-close" onclick="event.stopPropagation(); lumosEditor.closeTab('${tabId}')">&times;</button>
         `;
-        
+
         tabElement.addEventListener('click', () => this.switchToTab(tabId));
-        
+
         document.getElementById('tab-bar').appendChild(tabElement);
         return tabId;
     }
@@ -989,9 +1125,18 @@ class LumosEditor {
 
     updateTabTitle(tabId) {
         const tab = this.openTabs.get(tabId);
-        const tabElement = document.querySelector(`[data-tab-id="${tabId}"] .tab-name`);
-        if (tab && tabElement) {
-            tabElement.textContent = tab.fileName + (tab.modified ? ' •' : '');
+        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+        const tabNameElement = tabElement?.querySelector('.tab-name');
+        const tabCloseElement = tabElement?.querySelector('.tab-close');
+
+        if (tab && tabNameElement && tabCloseElement) {
+            tabNameElement.textContent = tab.fileName;
+
+            if (tab.modified) {
+                tabElement.classList.add('modified');
+            } else {
+                tabElement.classList.remove('modified');
+            }
         }
     }
 
@@ -1007,7 +1152,7 @@ class LumosEditor {
     updatePortSelect() {
         const portSelect = document.getElementById('port-select');
         portSelect.innerHTML = '<option value="">Select Port...</option>';
-        
+
         this.serialPorts.forEach(port => {
             const option = document.createElement('option');
             option.value = port.path;
@@ -1018,14 +1163,14 @@ class LumosEditor {
 
     updateInitProjectButton() {
         const initButton = document.getElementById('init-project-btn');
-        
+
         if (!this.currentWorkspace) {
             initButton.classList.add('hidden');
             return;
         }
 
         // Check if .lumos_ws file exists in the workspace
-        const hasLumosFile = this.currentWorkspace.fileTree.some(item => 
+        const hasLumosFile = this.currentWorkspace.fileTree.some(item =>
             item.type === 'file' && item.name === '.lumos_ws'
         );
 
@@ -1058,7 +1203,7 @@ class LumosEditor {
 
     async compileCode() {
         const boardType = document.getElementById('board-select').value;
-        
+
         // Get code from active tab's model
         let code = '';
         if (this.activeTab) {
@@ -1085,7 +1230,7 @@ class LumosEditor {
             if (result.success) {
                 this.addToConsole('ARM GCC compilation successful!');
                 this.addToOutput('ARM GCC compilation successful!');
-                
+
                 // Show stdout and stderr in both console and output
                 if (result.output) {
                     this.addToConsole(`ARM GCC stdout: ${result.output}`);
@@ -1095,12 +1240,12 @@ class LumosEditor {
                     this.addToConsole(`ARM GCC stderr: ${result.error}`);
                     this.addToOutput(result.error);
                 }
-                
+
                 this.addToConsole(`ARM GCC exit code: ${result.code}`);
             } else {
                 this.addToConsole(`ARM GCC compilation failed: ${result.error}`);
                 this.addToOutput(`ARM GCC compilation failed: ${result.error}`);
-                
+
                 if (result.output) {
                     this.addToConsole(`ARM GCC output: ${result.output}`);
                     this.addToOutput(result.output);
@@ -1115,7 +1260,7 @@ class LumosEditor {
     async flashToDevice() {
         const port = document.getElementById('port-select').value;
         const boardType = document.getElementById('board-select').value;
-        
+
         // Get code from active tab's model
         let code = '';
         if (this.activeTab) {
@@ -1151,11 +1296,11 @@ class LumosEditor {
     async sendSerialData() {
         const input = document.getElementById('serial-input');
         const data = input.value.trim();
-        
+
         if (data && this.serialConnected) {
             this.addToSerial(`> ${data}`);
             input.value = '';
-            
+
             try {
                 await window.electronAPI.serialWrite(data);
             } catch (error) {
@@ -1170,7 +1315,7 @@ class LumosEditor {
         try {
             this.addToConsole(`Connecting to ${port}...`);
             const result = await window.electronAPI.serialConnect(port, baudRate);
-            
+
             if (result.success) {
                 this.serialConnected = true;
                 this.updateConnectionStatus(port);
@@ -1261,34 +1406,20 @@ class LumosEditor {
     }
 
     renderFileTree() {
-        console.log('Rendering file tree:', this.currentWorkspace);
         if (!this.currentWorkspace || !this.currentWorkspace.fileTree) {
-            console.log('No workspace or file tree data');
             return;
         }
 
         const fileTreeContainer = document.getElementById('file-tree');
         fileTreeContainer.innerHTML = '';
-        
-        console.log('File tree data:', this.currentWorkspace.fileTree);
+
         this.renderFileTreeItems(this.currentWorkspace.fileTree, fileTreeContainer);
     }
 
     renderFileTreeItems(items, container) {
-        console.log('Rendering file tree items:', items);
         items.forEach((item, index) => {
-            console.log(`Rendering item ${index}:`, item);
             const itemElement = document.createElement('div');
             itemElement.className = `file-item ${item.type}`;
-
-            // Add extension-based class for files
-            if (item.type === 'file' && item.extension) {
-                const ext = item.extension.substring(1); // Remove the dot
-                itemElement.classList.add(ext);
-                if (ext === 'ino') {
-                    itemElement.classList.add('arduino');
-                }
-            }
 
             // Add expanded class for directories
             if (item.type === 'directory' && this.expandedDirectories.has(item.path)) {
@@ -1309,7 +1440,23 @@ class LumosEditor {
                 }
             }
 
-            itemElement.textContent = item.name;
+            // Create icon element
+            const icon = document.createElement('img');
+            icon.className = 'file-icon';
+            if (item.type === 'directory') {
+                icon.src = this.getFolderIcon(this.expandedDirectories.has(item.path));
+            } else {
+                icon.src = this.getFileIcon(item.name, item.extension);
+            }
+            icon.alt = '';
+
+            // Create text node
+            const textSpan = document.createElement('span');
+            textSpan.className = 'file-name';
+            textSpan.textContent = item.name;
+
+            itemElement.appendChild(icon);
+            itemElement.appendChild(textSpan);
             itemElement.dataset.path = item.path;
             itemElement.dataset.type = item.type;
 
@@ -1319,7 +1466,6 @@ class LumosEditor {
                 this.handleFileTreeClick(item);
             });
 
-            console.log('Appending item element:', itemElement);
             container.appendChild(itemElement);
 
             // Render children for directories
@@ -1335,7 +1481,6 @@ class LumosEditor {
                 container.appendChild(childrenContainer);
             }
         });
-        console.log('Container after rendering:', container);
     }
 
     async handleFileTreeClick(item) {

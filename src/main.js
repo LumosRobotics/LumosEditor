@@ -156,7 +156,7 @@ async function openFolder() {
 
 async function setWorkspace(folderPath) {
   currentWorkspace = folderPath;
-  
+
   // Stop existing file watcher if any
   if (fileWatcher) {
     await fileWatcher.close();
@@ -172,7 +172,7 @@ async function setWorkspace(folderPath) {
 
   // Send initial file tree and workspace info
   const fileTree = await buildFileTree(folderPath);
-  console.log('Built file tree for', folderPath, ':', fileTree);
+
   mainWindow.webContents.send('workspace-opened', {
     path: folderPath,
     name: path.basename(folderPath),
@@ -218,9 +218,7 @@ async function setWorkspace(folderPath) {
 
 async function buildFileTree(dirPath) {
   try {
-    console.log('Building file tree for:', dirPath);
     const items = fs.readdirSync(dirPath, { withFileTypes: true });
-    console.log('Found items:', items.map(i => i.name));
     const tree = [];
 
     for (const item of items) {
@@ -294,7 +292,7 @@ ipcMain.handle('get-serial-ports', async () => {
 ipcMain.handle('compile-code', async (event, { code, boardType }) => {
   try {
     let result;
-    
+
     if (boardType.startsWith('esp32')) {
       result = await mcuFlasher.compileESP32(code);
     } else if (boardType.startsWith('esp8266')) {
@@ -303,7 +301,7 @@ ipcMain.handle('compile-code', async (event, { code, boardType }) => {
       // Default to Arduino compilation
       result = await mcuFlasher.compileArduino(code, boardType);
     }
-    
+
     return result;
   } catch (error) {
     return { success: false, error: error.message };
@@ -314,12 +312,12 @@ ipcMain.handle('compile-with-arm-gcc', async (event, { code, boardType }) => {
   try {
     // Call the ARM GCC compiler binary
     const { spawn } = require('child_process');
-    
+
     // Get the path to the ARM GCC binary
     const armGccPath = path.join(__dirname, 'bin', 'gcc-arm-none-eabi-10.3-2021.10', 'bin', 'arm-none-eabi-g++');
-    
+
     console.log('Attempting to call ARM GCC at:', armGccPath);
-    
+
     // For now, just call the binary without arguments to test
     const result = await new Promise((resolve) => {
       const child = spawn(armGccPath, [], {
@@ -365,7 +363,7 @@ ipcMain.handle('compile-with-arm-gcc', async (event, { code, boardType }) => {
         });
       }, 5000);
     });
-    
+
     return result;
   } catch (error) {
     console.error('Error calling ARM GCC:', error);
@@ -376,7 +374,7 @@ ipcMain.handle('compile-with-arm-gcc', async (event, { code, boardType }) => {
 ipcMain.handle('flash-device', async (event, { port, code, boardType }) => {
   try {
     let result;
-    
+
     if (boardType.startsWith('esp32')) {
       result = await mcuFlasher.flashESP32(code, port);
     } else if (boardType.startsWith('esp8266')) {
@@ -385,7 +383,7 @@ ipcMain.handle('flash-device', async (event, { port, code, boardType }) => {
       // Default to Arduino flashing
       result = await mcuFlasher.flashArduino(code, port, boardType);
     }
-    
+
     return result;
   } catch (error) {
     return { success: false, error: error.message };
@@ -395,16 +393,16 @@ ipcMain.handle('flash-device', async (event, { port, code, boardType }) => {
 ipcMain.handle('serial-connect', async (event, { port, baudRate }) => {
   try {
     const result = await serialManager.connect(port, baudRate);
-    
+
     // Set up data callback to send data to renderer
     serialManager.setDataCallback((data) => {
       mainWindow.webContents.send('serial-data-received', data);
     });
-    
+
     serialManager.setErrorCallback((error) => {
       mainWindow.webContents.send('serial-error', error.message);
     });
-    
+
     return result;
   } catch (error) {
     return { success: false, error: error.message };
@@ -442,7 +440,7 @@ ipcMain.handle('read-workspace-file', async (event, filePath) => {
     if (!currentWorkspace || !filePath.startsWith(currentWorkspace)) {
       throw new Error('File access denied: File is outside workspace');
     }
-    
+
     const content = fs.readFileSync(filePath, 'utf8');
     return { success: true, content };
   } catch (error) {
@@ -481,14 +479,14 @@ ipcMain.handle('create-file', async (event, { dirPath, fileName }) => {
     if (!currentWorkspace || !dirPath.startsWith(currentWorkspace)) {
       throw new Error('Access denied: Directory is outside workspace');
     }
-    
+
     const filePath = path.join(dirPath, fileName);
-    
+
     // Check if file already exists
     if (fs.existsSync(filePath)) {
       throw new Error('File already exists');
     }
-    
+
     // Create an empty file
     fs.writeFileSync(filePath, '', 'utf8');
     return { success: true, path: filePath };
@@ -552,14 +550,14 @@ ipcMain.handle('initialize-project', async (event, workspacePath) => {
     if (!currentWorkspace || workspacePath !== currentWorkspace) {
       throw new Error('Access denied: Invalid workspace path');
     }
-    
+
     const lumosFile = path.join(workspacePath, '.lumos_ws');
-    
+
     // Check if .lumos_ws already exists
     if (fs.existsSync(lumosFile)) {
       throw new Error('Project is already initialized');
     }
-    
+
     // Create .lumos_ws file with project metadata
     const projectConfig = {
       name: path.basename(workspacePath),
@@ -572,7 +570,7 @@ ipcMain.handle('initialize-project', async (event, workspacePath) => {
         srcPath: "./src"
       }
     };
-    
+
     fs.writeFileSync(lumosFile, JSON.stringify(projectConfig, null, 2));
 
     // Create main.cpp in the workspace root (only if it doesn't exist)
@@ -587,7 +585,7 @@ void loop() {
 }`;
       fs.writeFileSync(mainFile, defaultCode);
     }
-    
+
     return { success: true, message: 'Project initialized successfully' };
   } catch (error) {
     return { success: false, error: error.message };
