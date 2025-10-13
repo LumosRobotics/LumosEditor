@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumos Editor</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top toolbar -->
+        <div id="toolbar">
+            <div class="toolbar-section">
+                <div class="toolbar-menu">
+                    <button class="toolbar-menu-btn" id="file-menu-btn">File</button>
+                    <div class="toolbar-dropdown hidden" id="file-dropdown">
+                        <div class="toolbar-dropdown-item" id="toolbar-open-folder">Open Folder</div>
+                    </div>
+                </div>
+                <button id="init-project-btn" class="toolbar-btn init-project-btn hidden">Initialize project here</button>
+                <button id="compile-btn" class="toolbar-btn compile-btn">Compile</button>
+                <button id="flash-btn" class="toolbar-btn flash-btn">Flash</button>
+            </div>
+            <div class="toolbar-section">
+                <select id="port-select" class="port-select">
+                    <option value="">Select Port...</option>
+                </select>
+                <select id="board-select" class="board-select">
+                    <option value="arduino-uno">Arduino Uno</option>
+                    <option value="arduino-nano">Arduino Nano</option>
+                    <option value="esp32">ESP32</option>
+                    <option value="esp8266">ESP8266</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main content area -->
+        <div id="main-content">
+            <!-- Welcome screen (shown when no workspace) -->
+            <div id="welcome-screen" class="welcome-screen hidden">
+                <div class="welcome-content">
+                    <h1>Lumos Editor</h1>
+                    <p>Open a folder to get started</p>
+                    <button id="open-folder-btn-welcome" class="open-folder-btn-large">Open Folder</button>
+
+                    <!-- Recent directories -->
+                    <div id="recent-directories" class="recent-directories hidden">
+                        <h3>Recent Folders</h3>
+                        <div id="recent-list" class="recent-list">
+                            <!-- Recent directories will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div id="sidebar">
+                <div id="workspace-info" class="workspace-info hidden">
+                    <div class="workspace-name" id="workspace-name">No folder open</div>
+                    <div class="workspace-path" id="workspace-path"></div>
+                </div>
+                <div id="file-explorer">
+                    <div class="no-folder-message" id="no-folder-message">
+                        <p>No folder open</p>
+                        <button id="open-folder-btn-center" class="open-folder-btn">Open Folder</button>
+                    </div>
+                    <div id="file-tree" class="file-tree hidden">
+                        <!-- File tree will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resize handle -->
+            <div id="sidebar-resize-handle" class="resize-handle"></div>
+
+            <!-- Editor and panels -->
+            <div id="editor-container">
+                <!-- Tab bar -->
+                <div id="tab-bar">
+                    <!-- Tabs will be added dynamically -->
+                </div>
+
+                <!-- Monaco editor -->
+                <div id="editor"></div>
+
+                <!-- Bottom panel -->
+                <div id="bottom-panel">
+                    <div class="panel-tabs">
+                        <button class="panel-tab active" data-panel="console">Console</button>
+                        <button class="panel-tab" data-panel="serial">Serial Monitor</button>
+                        <button class="panel-tab" data-panel="output">Output</button>
+                    </div>
+                    <div id="panel-content">
+                        <div id="console-panel" class="panel active">
+                            <div id="console-output"></div>
+                        </div>
+                        <div id="serial-panel" class="panel">
+                            <div id="serial-output"></div>
+                            <div class="serial-input">
+                                <input type="text" id="serial-input" placeholder="Send to device...">
+                                <button id="serial-send">Send</button>
+                            </div>
+                        </div>
+                        <div id="output-panel" class="panel">
+                            <div id="build-output"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div id="status-bar">
+            <div class="status-left">
+                <span id="status-file">No file open</span>
+                <span id="status-line-col">Ln 1, Col 1</span>
+            </div>
+            <div class="status-right">
+                <span id="status-connection">Disconnected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu hidden">
+        <div class="context-menu-item" id="context-new-file">
+            <span class="context-menu-icon">📄</span>
+            <span class="context-menu-text">New File...</span>
+        </div>
+        <div class="context-menu-item" id="context-new-folder">
+            <span class="context-menu-icon">📁</span>
+            <span class="context-menu-text">New Folder...</span>
+        </div>
+        <div class="context-menu-separator" id="context-delete-separator"></div>
+        <div class="context-menu-item" id="context-delete-file">
+            <span class="context-menu-icon">🗑️</span>
+            <span class="context-menu-text" id="context-delete-text">Delete File</span>
+        </div>
+    </div>
+
+    <script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
