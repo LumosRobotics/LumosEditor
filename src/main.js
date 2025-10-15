@@ -311,7 +311,7 @@ ipcMain.handle('compile-code', async (event, { code, boardType }) => {
   }
 });
 
-ipcMain.handle('compile-with-arm-gcc', async (event) => {
+ipcMain.handle('compile-with-arm-gcc', async (event, { boardId }) => {
   try {
     // Check if workspace is open
     if (!currentWorkspace) {
@@ -322,10 +322,13 @@ ipcMain.handle('compile-with-arm-gcc', async (event) => {
       };
     }
 
-    console.log('Compiling workspace with ARM GCC:', currentWorkspace);
+    // Default to lumos-brain if no boardId specified
+    const selectedBoard = boardId || 'lumos-brain';
 
-    // Compile the entire workspace
-    const result = await armCompiler.compileWorkspace(currentWorkspace);
+    console.log('Compiling workspace with ARM GCC:', currentWorkspace, 'Board:', selectedBoard);
+
+    // Compile the entire workspace with selected board
+    const result = await armCompiler.compileWorkspace(currentWorkspace, selectedBoard);
 
     return result;
   } catch (error) {

@@ -1,1 +1,3 @@
  * Configure custom commands through file, e.g. vel 2.0
+ * Real time plotting
+ * Sensor data viewer with pre built firmware that reads data from sensors and sends to serial

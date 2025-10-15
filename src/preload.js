@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Serial port operations
   getSerialPorts: () => ipcRenderer.invoke('get-serial-ports'),
   compileCode: (code, boardType) => ipcRenderer.invoke('compile-code', { code, boardType }),
-  compileWithArmGcc: (code, boardType) => ipcRenderer.invoke('compile-with-arm-gcc', { code, boardType }),
+  compileWithArmGcc: (boardId) => ipcRenderer.invoke('compile-with-arm-gcc', { boardId }),
   flashDevice: (port, code, boardType) => ipcRenderer.invoke('flash-device', { port, code, boardType }),
   serialConnect: (port, baudRate) => ipcRenderer.invoke('serial-connect', { port, baudRate }),
   serialDisconnect: () => ipcRenderer.invoke('serial-disconnect'),

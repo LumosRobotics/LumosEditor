@@ -1,0 +1,290 @@
+{
+  "board": {
+    "name": "LumosMicroBrain",
+    "version": "1.0",
+    "manufacturer": "Lumos Robotics",
+    "description": "Compact robotics control board with STM32F411 MCU",
+    "url": "https://lumos-robotics.com/products/lumos-microbrain"
+  },
+  "mcu": {
+    "model": "STM32G0B1CBT6",
+    "architecture": "ARM Cortex-M4",
+    "core": "Cortex-M4F",
+    "frequency": {
+      "max": 100000000,
+      "default": 100000000,
+      "unit": "Hz"
+    },
+    "fpu": true,
+    "dsp": true
+  },
+  "memory": {
+    "flash": {
+      "size": 524288,
+      "unit": "bytes",
+      "description": "512KB Flash memory"
+    },
+    "ram": {
+      "size": 131072,
+      "unit": "bytes",
+      "description": "128KB SRAM"
+    },
+    "ccm": {
+      "size": 0,
+      "unit": "bytes",
+      "description": "No CCM on STM32F411"
+    }
+  },
+  "power": {
+    "voltage": {
+      "min": 5.0,
+      "max": 12.0,
+      "unit": "V",
+      "description": "Compact voltage range for portable applications"
+    },
+    "logic": {
+      "voltage": 3.3,
+      "unit": "V"
+    },
+    "current": {
+      "max": 2000,
+      "unit": "mA",
+      "description": "2A maximum current draw"
+    }
+  },
+  "interfaces": {
+    "usb": {
+      "available": true,
+      "type": "USB 2.0 Full Speed",
+      "modes": [
+        "Device",
+        "OTG"
+      ]
+    },
+    "serial": {
+      "uart_count": 3,
+      "default_baudrate": 115200,
+      "supported_baudrates": [
+        9600,
+        19200,
+        38400,
+        57600,
+        115200,
+        230400,
+        460800
+      ]
+    },
+    "i2c": {
+      "count": 3,
+      "speed": [
+        "Standard (100kHz)",
+        "Fast (400kHz)"
+      ]
+    },
+    "spi": {
+      "count": 3,
+      "max_speed": 25000000,
+      "unit": "Hz"
+    },
+    "can": {
+      "count": 0,
+      "type": "Not available"
+    }
+  },
+  "gpio": {
+    "total_pins": 36,
+    "digital_io": 36,
+    "analog_inputs": 10,
+    "pwm_channels": 8,
+    "external_interrupts": 10
+  },
+  "peripherals": {
+    "timers": {
+      "advanced": 1,
+      "general_purpose": 8,
+      "basic": 0
+    },
+    "adc": {
+      "count": 1,
+      "resolution": 12,
+      "channels": 10,
+      "sample_rate": 2400000,
+      "unit": "sps"
+    },
+    "dac": {
+      "count": 0,
+      "resolution": 0,
+      "channels": 0
+    },
+    "watchdog": {
+      "independent": true,
+      "window": true
+    },
+    "rtc": {
+      "available": true,
+      "battery_backup": false
+    }
+  },
+  "motor_control": {
+    "h_bridges": 2,
+    "max_current_per_channel": {
+      "continuous": 1000,
+      "peak": 2000,
+      "unit": "mA"
+    },
+    "encoder_inputs": 2,
+    "servo_outputs": 4
+  },
+  "sensors": {
+    "imu": {
+      "available": false,
+      "model": "None",
+      "axes": 0,
+      "features": []
+    },
+    "temperature": {
+      "internal": true,
+      "external": false
+    }
+  },
+  "communication": {
+    "wifi": {
+      "available": false
+    },
+    "bluetooth": {
+      "available": false
+    },
+    "ethernet": {
+      "available": false
+    }
+  },
+  "storage": {
+    "sd_card": {
+      "available": false
+    },
+    "eeprom": {
+      "available": false
+    }
+  },
+  "leds": {
+    "user_leds": 2,
+    "colors": [
+      "Green",
+      "Red"
+    ],
+    "gpio_pins": [
+      "PC13",
+      "PC14"
+    ]
+  },
+  "buttons": {
+    "user_buttons": 1,
+    "reset_button": true,
+    "boot_button": true
+  },
+  "programming": {
+    "methods": [
+      "ST-Link",
+      "USB DFU",
+      "Serial Bootloader"
+    ],
+    "debug": {
+      "swd": true,
+      "jtag": false
+    }
+  },
+  "compilation": {
+    "board_id": "lumos-microbrain",
+    "linker_script": "src/boards/f4/lumos_config/STM32F411CE_FLASH.ld",
+    "startup_file": "src/boards/f4/lumos_config/startup_stm32f411xe.s",
+    "system_file": "src/boards/f4/lumos_config/system_stm32f4xx.c",
+    "defines": [
+      "STM32F411xE",
+      "USE_HAL_DRIVER",
+      "LUMOS_MICROBRAIN"
+    ],
+    "include_paths": [
+      "src/boards/f4/lumos_config",
+      "src/boards/f4/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+      "src/boards/f4/Drivers/CMSIS/Include"
+    ]
+  },
+  "dimensions": {
+    "length": 50,
+    "width": 40,
+    "height": 12,
+    "unit": "mm",
+    "weight": {
+      "value": 25,
+      "unit": "g"
+    }
+  },
+  "operating_conditions": {
+    "temperature": {
+      "min": -10,
+      "max": 70,
+      "unit": "°C"
+    },
+    "humidity": {
+      "max": 85,
+      "unit": "%",
+      "non_condensing": true
+    }
+  },
+  "certifications": {
+    "ce": false,
+    "fcc": false,
+    "rohs": true
+  },
+  "pinout": {
+    "description": "Compact 40-pin layout for space-constrained applications",
+    "connector_types": [
+      "Pin headers",
+      "JST connectors"
+    ],
+    "expansion_headers": false
+  },
+  "compatibility": {
+    "arduino_shields": false,
+    "mikrobus": false,
+    "pmod": false,
+    "grove": false
+  },
+  "documentation": {
+    "schematic": "docs/LumosMicroBrain_Schematic.pdf",
+    "datasheet": "docs/LumosMicroBrain_Datasheet.pdf",
+    "user_manual": "docs/LumosMicroBrain_UserManual.pdf",
+    "examples": "examples/LumosMicroBrain/"
+  },
+  "notes": [
+    "This is placeholder configuration data",
+    "Compact form factor ideal for small robots and drones",
+    "USB-powered design for easy prototyping",
+    "Compatible with 3.3V sensors and peripherals",
+    "No RTC battery backup - RTC resets on power loss",
+    "Optimized for low-power applications"
+  ],
+  "comparison_with_lumosbrain": {
+    "advantages": [
+      "Smaller form factor (50% size reduction)",
+      "Lower power consumption",
+      "Lower cost",
+      "Lighter weight"
+    ],
+    "limitations": [
+      "Fewer GPIO pins (36 vs 82)",
+      "Lower clock speed (100MHz vs 168MHz)",
+      "Less flash memory (512KB vs 1MB)",
+      "Fewer motor drivers (2 vs 4)",
+      "No CAN bus support",
+      "No IMU onboard"
+    ],
+    "use_cases": [
+      "Small wheeled robots",
+      "Quadcopter flight controllers",
+      "Sensor nodes",
+      "Educational projects",
+      "Portable devices"
+    ]
+  }
+}

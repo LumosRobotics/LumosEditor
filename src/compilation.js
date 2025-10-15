@@ -14,6 +14,112 @@ class ArmCompiler {
 
         // Build directory (will be set per workspace)
         this.buildDir = null;
+
+        // Current board configuration
+        this.boardConfig = null;
+    }
+
+    /**
+     * Load board configuration from JSON file
+     */
+    loadBoardConfig(boardId) {
+        try {
+            const boardFiles = {
+                'lumos-brain': 'LumosBrain.json',
+                'lumos-microbrain': 'LumosMicroBrain.json'
+            };
+
+            const boardFile = boardFiles[boardId];
+            if (!boardFile) {
+                throw new Error(`Unknown board ID: ${boardId}`);
+            }
+
+            const boardPath = path.join(__dirname, 'boards', boardFile);
+            const boardData = fs.readFileSync(boardPath, 'utf8');
+            this.boardConfig = JSON.parse(boardData);
+
+            return this.boardConfig;
+        } catch (error) {
+            console.error('Error loading board config:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Detect MCU family from board configuration
+     */
+    detectMcuFamily() {
+        if (!this.boardConfig || !this.boardConfig.mcu) {
+            return 'f4'; // Default to F4
+        }
+
+        const mcuModel = this.boardConfig.mcu.model.toUpperCase();
+
+        if (mcuModel.includes('STM32H7')) {
+            return 'h7';
+        } else if (mcuModel.includes('STM32F4')) {
+            return 'f4';
+        } else if (mcuModel.includes('STM32G0')) {
+            return 'g0';
+        } else if (mcuModel.includes('STM32G4')) {
+            return 'g4';
+        }
+
+        // Default to F4 for unknown families
+        return 'f4';
+    }
+
+    /**
+     * Get MCU-specific compilation settings
+     */
+    getMcuSettings() {
+        const family = this.detectMcuFamily();
+        const mcuModel = this.boardConfig?.mcu?.model || 'STM32F407VGT6';
+
+        const settings = {
+            f4: {
+                boardPath: path.join(__dirname, 'boards', 'f4'),
+                cmsisDevice: 'STM32F4xx',
+                startupFile: 'startup_stm32f407xx.s',
+                systemFile: 'system_stm32f4xx.c',
+                linkerScript: 'STM32F407VG_FLASH.ld',
+                cpuFlags: ['-mcpu=cortex-m4', '-mthumb', '-mfloat-abi=soft'],
+                defines: ['STM32F407xx'],
+                description: 'STM32F407VG (Cortex-M4, 168MHz)'
+            },
+            h7: {
+                boardPath: path.join(__dirname, 'boards', 'h7'),
+                cmsisDevice: 'STM32H7xx',
+                startupFile: 'startup_stm32h723xx.s',
+                systemFile: 'system_stm32h7xx.c',
+                linkerScript: 'STM32H723VG_FLASH.ld',
+                cpuFlags: ['-mcpu=cortex-m7', '-mthumb', '-mfpu=fpv5-d16', '-mfloat-abi=hard'],
+                defines: ['STM32H723xx', 'CORE_CM7', 'DATA_IN_D2_SRAM'],
+                description: 'STM32H723VG (Cortex-M7, 550MHz)'
+            },
+            g0: {
+                boardPath: path.join(__dirname, 'boards', 'g0'),
+                cmsisDevice: 'STM32G0xx',
+                startupFile: 'startup_stm32g0b1xx.s',
+                systemFile: 'system_stm32g0xx.c',
+                linkerScript: 'STM32G0B1CB_FLASH.ld',
+                cpuFlags: ['-mcpu=cortex-m0plus', '-mthumb'],
+                defines: ['STM32G0B1xx'],
+                description: 'STM32G0B1CB (Cortex-M0+, 64MHz)'
+            },
+            g4: {
+                boardPath: path.join(__dirname, 'boards', 'g4'),
+                cmsisDevice: 'STM32G4xx',
+                startupFile: 'startup_stm32g431xx.s',
+                systemFile: 'system_stm32g4xx.c',
+                linkerScript: 'STM32G431CB_FLASH.ld',
+                cpuFlags: ['-mcpu=cortex-m4', '-mthumb', '-mfpu=fpv4-sp-d16', '-mfloat-abi=hard'],
+                defines: ['STM32G431xx'],
+                description: 'STM32G431CB (Cortex-M4, 170MHz)'
+            }
+        };
+
+        return settings[family] || settings.f4;
     }
 
     setBuildDir(workspacePath) {
@@ -73,20 +179,46 @@ class ArmCompiler {
      */
     async compileFile(sourceFile, workspacePath, options = {}) {
         const ext = path.extname(sourceFile).toLowerCase();
-        const compiler = (ext === '.c') ? this.gccCPath : this.gccPath;
+        const isAssembly = (ext === '.s' || ext === '.S');
+
+        // Use gcc (not g++) for C and assembly files
+        const compiler = (isAssembly || ext === '.c') ? this.gccCPath : this.gccPath;
+
         const outputFile = path.join(
             this.buildDir,
             path.basename(sourceFile, ext) + '.o'
         );
 
+        // Get MCU-specific settings
+        const mcuSettings = this.getMcuSettings();
+        const cmsisDeviceInclude = path.join(mcuSettings.boardPath, 'Drivers', 'CMSIS', 'Device', 'ST', mcuSettings.cmsisDevice, 'Include');
+        const cmsisCoreInclude = path.join(mcuSettings.boardPath, 'Drivers', 'CMSIS', 'Include');
+        const boardConfigInclude = path.join(mcuSettings.boardPath, 'lumos_config');
+
+        // Assembly files need minimal flags
+        if (isAssembly) {
+            const args = [
+                '-c',
+                sourceFile,
+                '-o', outputFile,
+                ...mcuSettings.cpuFlags,
+                ...(options.additionalFlags || [])
+            ];
+            return this.runCommand(compiler, args);
+        }
+
+        // C/C++ files get full compilation flags
+        const defineFlags = mcuSettings.defines.map(def => `-D${def}`);
         const args = [
             '-c',                           // Compile only, don't link
             sourceFile,                     // Input file
             '-o', outputFile,               // Output object file
             '-I' + workspacePath,           // Include workspace root
-            '-mcpu=cortex-m4',              // Target Cortex-M4
-            '-mthumb',                      // Use Thumb instruction set
-            '-mfloat-abi=soft',            // Soft float ABI
+            '-I' + boardConfigInclude,      // Board configuration
+            '-I' + cmsisDeviceInclude,      // Device headers
+            '-I' + cmsisCoreInclude,        // ARM CMSIS core headers
+            ...mcuSettings.cpuFlags,        // CPU-specific flags
+            ...defineFlags,                 // MCU defines
             '-O2',                          // Optimization level
             '-Wall',                        // Enable warnings
             '-ffunction-sections',          // Each function in its own section
@@ -103,13 +235,17 @@ class ArmCompiler {
     async linkFiles(objectFiles, outputName = 'output.elf') {
         const outputPath = path.join(this.buildDir, outputName);
 
+        // Get MCU-specific settings
+        const mcuSettings = this.getMcuSettings();
+        const linkerScript = path.join(mcuSettings.boardPath, 'lumos_config', mcuSettings.linkerScript);
+
         const args = [
             ...objectFiles,
             '-o', outputPath,
-            '-mcpu=cortex-m4',
-            '-mthumb',
-            '-mfloat-abi=soft',
+            ...mcuSettings.cpuFlags,        // CPU-specific flags
+            '-T' + linkerScript,            // Linker script for memory layout
             '-Wl,--gc-sections',            // Remove unused sections
+            '-Wl,-Map=' + path.join(this.buildDir, 'output.map'),  // Generate map file
             '-specs=nosys.specs',           // Use newlib-nano
             '--specs=nano.specs'
         ];
@@ -200,15 +336,30 @@ int main() {
     /**
      * Compile an entire workspace
      */
-    async compileWorkspace(workspacePath, options = {}) {
+    async compileWorkspace(workspacePath, boardId = 'lumos-brain', options = {}) {
         const output = [];
         const errors = [];
 
         try {
+            // Load board configuration
+            const boardConfig = this.loadBoardConfig(boardId);
+            if (!boardConfig) {
+                return {
+                    success: false,
+                    error: `Failed to load board configuration for: ${boardId}`,
+                    output: output.join('\n')
+                };
+            }
+
             // Set build directory for this workspace
             this.setBuildDir(workspacePath);
 
+            // Get MCU-specific settings
+            const mcuSettings = this.getMcuSettings();
+
             output.push('=== Lumos Editor - ARM Compilation ===');
+            output.push(`Board: ${boardConfig.board.name}`);
+            output.push(`Target: ${mcuSettings.description}`);
             output.push(`Workspace: ${workspacePath}`);
             output.push(`Build directory: ${this.buildDir}`);
             output.push('');
@@ -247,6 +398,43 @@ int main() {
             // Compile each file
             output.push('Compiling source files...');
             const objectFiles = [];
+
+            // Compile board support files first
+            const boardConfigPath = path.join(mcuSettings.boardPath, 'lumos_config');
+            const startupFile = path.join(boardConfigPath, mcuSettings.startupFile);
+            const systemFile = path.join(boardConfigPath, mcuSettings.systemFile);
+
+            // Compile startup code (assembly)
+            output.push(`  Compiling ${boardConfig.mcu.model} startup code...`);
+            const startupResult = await this.compileFile(startupFile, workspacePath, options);
+            if (!startupResult.success) {
+                errors.push('Failed to compile startup code:');
+                errors.push(startupResult.error || startupResult.stderr);
+                return {
+                    success: false,
+                    error: errors.join('\n'),
+                    output: output.join('\n'),
+                    stderr: startupResult.stderr
+                };
+            }
+            objectFiles.push(path.join(this.buildDir, path.basename(mcuSettings.startupFile, '.s') + '.o'));
+
+            // Compile system initialization
+            output.push(`  Compiling ${boardConfig.mcu.model} system initialization...`);
+            const systemResult = await this.compileFile(systemFile, workspacePath, options);
+            if (!systemResult.success) {
+                errors.push('Failed to compile system initialization:');
+                errors.push(systemResult.error || systemResult.stderr);
+                return {
+                    success: false,
+                    error: errors.join('\n'),
+                    output: output.join('\n'),
+                    stderr: systemResult.stderr
+                };
+            }
+            objectFiles.push(path.join(this.buildDir, path.basename(mcuSettings.systemFile, '.c') + '.o'));
+
+            output.push('');
 
             // Compile C++ files
             for (const cppFile of sourceFiles.cpp) {

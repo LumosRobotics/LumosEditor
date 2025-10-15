@@ -1,0 +1,1 @@
+https://www.st.com/en/embedded-software/stm32cube-mcu-mpu-packages/products.html

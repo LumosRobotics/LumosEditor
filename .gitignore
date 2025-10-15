@@ -2,4 +2,7 @@
 .vscode
 node_modules
 src/bin
-src/boards
+src/boards/f4
+src/boards/g4
+src/boards/g0
+src/boards/h7

@@ -1,0 +1,314 @@
+{
+  "board": {
+    "name": "LumosBrain",
+    "version": "1.0",
+    "manufacturer": "Lumos Robotics",
+    "description": "High-performance robotics control board with STM32H723 MCU",
+    "url": "https://lumos-robotics.com/products/lumos-brain"
+  },
+  "mcu": {
+    "model": "STM32H723VGT6",
+    "architecture": "ARM Cortex-M7",
+    "core": "Cortex-M7F",
+    "frequency": {
+      "max": 550000000,
+      "default": 550000000,
+      "unit": "Hz"
+    },
+    "fpu": true,
+    "dsp": true,
+    "cache": {
+      "instruction": 16384,
+      "data": 16384,
+      "unit": "bytes"
+    },
+    "art_accelerator": true
+  },
+  "memory": {
+    "flash": {
+      "size": 1048576,
+      "unit": "bytes",
+      "description": "1MB Flash memory"
+    },
+    "ram": {
+      "total": 577536,
+      "dtcm": 131072,
+      "sram1": 262144,
+      "sram2": 184320,
+      "unit": "bytes",
+      "description": "564KB total RAM (128KB DTCM + 256KB SRAM1 + 180KB SRAM2)"
+    }
+  },
+  "power": {
+    "voltage": {
+      "min": 6.0,
+      "max": 28.0,
+      "unit": "V",
+      "description": "Wide input voltage range"
+    },
+    "logic": {
+      "voltage": 3.3,
+      "unit": "V"
+    },
+    "current": {
+      "max": 5000,
+      "unit": "mA",
+      "description": "5A maximum current draw"
+    }
+  },
+  "interfaces": {
+    "usb": {
+      "available": true,
+      "type": "USB 2.0 Full Speed",
+      "modes": [
+        "Device",
+        "Host",
+        "OTG"
+      ]
+    },
+    "serial": {
+      "uart_count": 6,
+      "default_baudrate": 115200,
+      "supported_baudrates": [
+        9600,
+        19200,
+        38400,
+        57600,
+        115200,
+        230400,
+        460800,
+        921600
+      ]
+    },
+    "i2c": {
+      "count": 3,
+      "speed": [
+        "Standard (100kHz)",
+        "Fast (400kHz)",
+        "Fast+ (1MHz)"
+      ]
+    },
+    "spi": {
+      "count": 3,
+      "max_speed": 42000000,
+      "unit": "Hz"
+    },
+    "can": {
+      "count": 2,
+      "type": "CAN 2.0B"
+    }
+  },
+  "gpio": {
+    "total_pins": 82,
+    "digital_io": 82,
+    "analog_inputs": 16,
+    "pwm_channels": 14,
+    "external_interrupts": 16
+  },
+  "peripherals": {
+    "timers": {
+      "advanced": 2,
+      "general_purpose": 12,
+      "basic": 2,
+      "low_power": 2
+    },
+    "adc": {
+      "count": 2,
+      "resolution": 16,
+      "channels": 20,
+      "sample_rate": 3600000,
+      "unit": "sps",
+      "features": ["Oversampling", "Analog watchdog"]
+    },
+    "dac": {
+      "count": 2,
+      "resolution": 12,
+      "channels": 2
+    },
+    "watchdog": {
+      "independent": true,
+      "window": true
+    },
+    "rtc": {
+      "available": true,
+      "battery_backup": true
+    },
+    "dma": {
+      "controllers": 2,
+      "channels": 16,
+      "features": ["DMAMUX", "2D addressing"]
+    },
+    "crypto": {
+      "available": true,
+      "features": ["AES-128/192/256", "DES/TDES", "Hash (SHA-1/224/256)"]
+    }
+  },
+  "motor_control": {
+    "h_bridges": 4,
+    "max_current_per_channel": {
+      "continuous": 2000,
+      "peak": 5000,
+      "unit": "mA"
+    },
+    "encoder_inputs": 4,
+    "servo_outputs": 8
+  },
+  "sensors": {
+    "imu": {
+      "available": true,
+      "model": "MPU6050",
+      "axes": 6,
+      "features": [
+        "Accelerometer",
+        "Gyroscope"
+      ]
+    },
+    "temperature": {
+      "internal": true,
+      "external": false
+    }
+  },
+  "communication": {
+    "wifi": {
+      "available": false
+    },
+    "bluetooth": {
+      "available": false
+    },
+    "ethernet": {
+      "available": false
+    }
+  },
+  "storage": {
+    "sd_card": {
+      "available": true,
+      "interface": "SDIO",
+      "max_speed": "High Speed (50MHz)"
+    },
+    "eeprom": {
+      "available": false
+    }
+  },
+  "leds": {
+    "user_leds": 4,
+    "colors": [
+      "Green",
+      "Orange",
+      "Red",
+      "Blue"
+    ],
+    "gpio_pins": [
+      "PD12",
+      "PD13",
+      "PD14",
+      "PD15"
+    ]
+  },
+  "buttons": {
+    "user_buttons": 1,
+    "reset_button": true,
+    "boot_button": true
+  },
+  "programming": {
+    "methods": [
+      "ST-Link",
+      "USB DFU",
+      "Serial Bootloader"
+    ],
+    "debug": {
+      "swd": true,
+      "jtag": true
+    }
+  },
+  "compilation": {
+    "board_id": "lumos-brain",
+    "linker_script": "src/boards/h7/lumos_config/STM32H723VG_FLASH.ld",
+    "startup_file": "src/boards/h7/lumos_config/startup_stm32h723xx.s",
+    "system_file": "src/boards/h7/lumos_config/system_stm32h7xx.c",
+    "cpu_flags": [
+      "-mcpu=cortex-m7",
+      "-mthumb",
+      "-mfpu=fpv5-d16",
+      "-mfloat-abi=hard"
+    ],
+    "defines": [
+      "STM32H723xx",
+      "USE_HAL_DRIVER",
+      "LUMOS_BRAIN",
+      "CORE_CM7",
+      "DATA_IN_D2_SRAM"
+    ],
+    "include_paths": [
+      "src/boards/h7/lumos_config",
+      "src/boards/h7/Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+      "src/boards/h7/Drivers/CMSIS/Include"
+    ],
+    "optimization": {
+      "default_level": "-O2",
+      "recommended_levels": ["-O2", "-O3", "-Os"],
+      "notes": "Cortex-M7 benefits from cache-aware optimization"
+    }
+  },
+  "dimensions": {
+    "length": 100,
+    "width": 80,
+    "height": 20,
+    "unit": "mm",
+    "weight": {
+      "value": 85,
+      "unit": "g"
+    }
+  },
+  "operating_conditions": {
+    "temperature": {
+      "min": -20,
+      "max": 85,
+      "unit": "°C"
+    },
+    "humidity": {
+      "max": 95,
+      "unit": "%",
+      "non_condensing": true
+    }
+  },
+  "certifications": {
+    "ce": false,
+    "fcc": false,
+    "rohs": true
+  },
+  "pinout": {
+    "description": "See documentation for complete pinout diagram",
+    "connector_types": [
+      "Pin headers",
+      "Screw terminals",
+      "JST connectors"
+    ],
+    "expansion_headers": true
+  },
+  "compatibility": {
+    "arduino_shields": false,
+    "mikrobus": false,
+    "pmod": false,
+    "grove": true
+  },
+  "documentation": {
+    "schematic": "docs/LumosBrain_Schematic.pdf",
+    "datasheet": "docs/LumosBrain_Datasheet.pdf",
+    "user_manual": "docs/LumosBrain_UserManual.pdf",
+    "examples": "examples/LumosBrain/"
+  },
+  "notes": [
+    "This is placeholder configuration data",
+    "STM32H723 provides 3.3x performance boost over STM32F407 (550MHz vs 168MHz)",
+    "Cortex-M7 architecture with 16KB instruction and data cache for superior performance",
+    "Enhanced security with hardware cryptographic accelerators (AES, Hash)",
+    "16-bit ADC resolution (vs 12-bit on F4) for higher precision sensor readings",
+    "564KB RAM provides ample space for complex algorithms and data buffering",
+    "Board supports both 3.3V and 5V logic levels with level shifters",
+    "All motor outputs are protected with overcurrent detection",
+    "USB can be used for programming, debugging, and serial communication",
+    "Real-time clock requires CR2032 battery for backup",
+    "Hardware floating-point unit with double precision support",
+    "Ideal for computationally intensive applications: computer vision, sensor fusion, advanced control"
+  ]
+}

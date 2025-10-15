@@ -1272,8 +1272,8 @@ class LumosEditor {
         document.getElementById('build-output').textContent = '';
 
         try {
-            // Compile the entire workspace
-            const result = await window.electronAPI.compileWithArmGcc();
+            // Compile the entire workspace with selected board
+            const result = await window.electronAPI.compileWithArmGcc(boardType);
 
             if (result.success) {
                 this.addToConsole('ARM GCC compilation successful!');
