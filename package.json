@@ -7,9 +7,20 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:mac:universal": "electron-builder --mac --universal",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --mac --win --linux",
     "test": "jest"
   },
-  "keywords": ["electron", "code-editor", "mcu", "arduino", "embedded"],
+  "keywords": [
+    "electron",
+    "code-editor",
+    "mcu",
+    "arduino",
+    "embedded"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
@@ -23,17 +34,202 @@
     "serialport": "^12.0.0",
     "@serialport/parser-readline": "^12.0.0",
     "node-pty": "^1.0.0",
-    "chokidar": "^3.5.3"
+    "chokidar": "^3.5.3",
+    "ansi-to-html": "^0.6.15"
   },
   "build": {
-    "appId": "com.yourcompany.lumoseditor",
+    "appId": "com.lumosrobotics.lumoseditor",
     "productName": "Lumos Editor",
+    "copyright": "Copyright © 2025 Lumos Robotics",
+    "compression": "maximum",
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/serialport/**/*",
+      "**/node_modules/@serialport/**/*",
+      "**/src/bin/**/*"
+    ],
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "src/**/*",
-      "node_modules/**/*"
-    ]
+      "node_modules/**/*",
+      "!node_modules/.cache",
+      "!**/*.map",
+      "!src/boards/**/Examples/**",
+      "!src/boards/**/Projects/**",
+      "!src/boards/**/Documentation/**",
+      "!src/boards/**/Utilities/**",
+      "!src/boards/**/*.pdf",
+      "!src/boards/**/*.chm",
+      "!src/bin/**/share/doc/**",
+      "!src/bin/**/share/man/**",
+      "!src/bin/**/share/info/**",
+      "!src/bin/**/share/locale/**",
+      "!src/bin/**/arm-none-eabi/lib/ldscripts/**",
+      "!src/bin/**/lib/gcc/arm-none-eabi/*/thumb/v7-m/**",
+      "!src/bin/**/lib/gcc/arm-none-eabi/*/thumb/v8-m.*/**",
+      "!src/bin/**/arm-none-eabi/lib/thumb/v7-m/**",
+      "!src/bin/**/arm-none-eabi/lib/thumb/v8-m.*/**",
+      "!src/bin/**/bin/arm-none-eabi-addr2line*",
+      "!src/bin/**/bin/arm-none-eabi-c++filt*",
+      "!src/bin/**/bin/arm-none-eabi-elfedit*",
+      "!src/bin/**/bin/arm-none-eabi-gcov*",
+      "!src/bin/**/bin/arm-none-eabi-gprof*",
+      "!src/bin/**/bin/arm-none-eabi-nm*",
+      "!src/bin/**/bin/arm-none-eabi-ranlib*",
+      "!src/bin/**/bin/arm-none-eabi-readelf*",
+      "!src/bin/**/bin/arm-none-eabi-strings*",
+      "!src/bin/**/bin/arm-none-eabi-strip*",
+      "!node_modules/**/test/**",
+      "!node_modules/**/tests/**",
+      "!node_modules/**/__tests__/**",
+      "!node_modules/**/*.test.js",
+      "!node_modules/**/*.spec.js",
+      "!node_modules/**/*.test.ts",
+      "!node_modules/**/*.spec.ts",
+      "!node_modules/**/example/**",
+      "!node_modules/**/examples/**",
+      "!node_modules/**/demo/**",
+      "!node_modules/**/demos/**",
+      "!node_modules/**/benchmark/**",
+      "!node_modules/**/benchmarks/**",
+      "!node_modules/**/.github/**",
+      "!node_modules/**/.travis.yml",
+      "!node_modules/**/.circleci/**",
+      "!node_modules/**/appveyor.yml",
+      "!node_modules/**/.eslintrc*",
+      "!node_modules/**/.prettierrc*",
+      "!node_modules/**/.editorconfig",
+      "!node_modules/**/CHANGELOG*",
+      "!node_modules/**/README*",
+      "!node_modules/**/readme*",
+      "!node_modules/**/History*",
+      "!node_modules/**/AUTHORS*",
+      "!node_modules/**/CONTRIBUTORS*",
+      "!node_modules/**/*.md",
+      "!node_modules/**/*.markdown",
+      "!node_modules/**/docs/**",
+      "!node_modules/**/doc/**",
+      "!node_modules/**/documentation/**",
+      "!node_modules/**/website/**",
+      "!node_modules/**/*.ts",
+      "!node_modules/**/*.tsx",
+      "!node_modules/**/tsconfig.json",
+      "node_modules/**/*.d.ts",
+      "!node_modules/**/Makefile",
+      "!node_modules/**/Gruntfile.js",
+      "!node_modules/**/Gulpfile.js",
+      "!node_modules/**/webpack.config.js",
+      "!node_modules/**/coverage/**",
+      "!node_modules/**/.nyc_output/**",
+      "!node_modules/**/.gitignore",
+      "!node_modules/**/.npmignore",
+      "!node_modules/monaco-editor/dev/**",
+      "!node_modules/monaco-editor/esm/**"
+    ],
+    "extraResources": [
+      {
+        "from": "third_party",
+        "to": "third_party",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "title": "Lumos Editor ${version}",
+      "backgroundColor": "#1e1e1e"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Lumos Editor"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "Development",
+      "icon": "build/icon.png"
+    }
   }
 }

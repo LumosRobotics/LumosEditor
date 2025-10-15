@@ -6,3 +6,9 @@ src/boards/f4
 src/boards/g4
 src/boards/g0
 src/boards/h7
+
+# Build output
+dist
+build/*.icns
+build/*.ico
+build/*.png

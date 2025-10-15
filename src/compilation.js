@@ -17,6 +17,19 @@ class ArmCompiler {
 
         // Current board configuration
         this.boardConfig = null;
+
+        // ANSI color codes for terminal output
+        this.colors = {
+            reset: '\x1b[0m',
+            bright: '\x1b[1m',
+            red: '\x1b[31m',
+            green: '\x1b[32m',
+            yellow: '\x1b[33m',
+            blue: '\x1b[34m',
+            magenta: '\x1b[35m',
+            cyan: '\x1b[36m',
+            white: '\x1b[37m'
+        };
     }
 
     /**
@@ -357,15 +370,15 @@ int main() {
             // Get MCU-specific settings
             const mcuSettings = this.getMcuSettings();
 
-            output.push('=== Lumos Editor - ARM Compilation ===');
-            output.push(`Board: ${boardConfig.board.name}`);
-            output.push(`Target: ${mcuSettings.description}`);
-            output.push(`Workspace: ${workspacePath}`);
-            output.push(`Build directory: ${this.buildDir}`);
+            output.push(`${this.colors.cyan}${this.colors.bright}=== Lumos Editor - ARM Compilation ===${this.colors.reset}`);
+            output.push(`${this.colors.cyan}Board:${this.colors.reset} ${boardConfig.board.name}`);
+            output.push(`${this.colors.cyan}Target:${this.colors.reset} ${mcuSettings.description}`);
+            output.push(`${this.colors.cyan}Workspace:${this.colors.reset} ${workspacePath}`);
+            output.push(`${this.colors.cyan}Build directory:${this.colors.reset} ${this.buildDir}`);
             output.push('');
 
             // Find all source files
-            output.push('Scanning for source files...');
+            output.push(`${this.colors.yellow}Scanning for source files...${this.colors.reset}`);
             const sourceFiles = this.findSourceFiles(workspacePath);
 
             const totalFiles = sourceFiles.cpp.length + sourceFiles.c.length;
@@ -378,9 +391,9 @@ int main() {
                 };
             }
 
-            output.push(`Found ${sourceFiles.cpp.length} C++ file(s)`);
-            output.push(`Found ${sourceFiles.c.length} C file(s)`);
-            output.push(`Found ${sourceFiles.headers.length} header file(s)`);
+            output.push(`${this.colors.green}Found ${sourceFiles.cpp.length} C++ file(s)${this.colors.reset}`);
+            output.push(`${this.colors.green}Found ${sourceFiles.c.length} C file(s)${this.colors.reset}`);
+            output.push(`${this.colors.green}Found ${sourceFiles.headers.length} header file(s)${this.colors.reset}`);
             output.push('');
 
             // Check if we need to create Arduino-style wrapper
@@ -388,15 +401,15 @@ int main() {
             let wrapperPath = null;
 
             if (needsWrapper) {
-                output.push('Creating Arduino-style main() wrapper...');
+                output.push(`${this.colors.magenta}Creating Arduino-style main() wrapper...${this.colors.reset}`);
                 wrapperPath = this.createArduinoWrapper();
             } else {
-                output.push('Detected existing main() function, skipping wrapper...');
+                output.push(`${this.colors.magenta}Detected existing main() function, skipping wrapper...${this.colors.reset}`);
             }
             output.push('');
 
             // Compile each file
-            output.push('Compiling source files...');
+            output.push(`${this.colors.cyan}${this.colors.bright}Compiling source files...${this.colors.reset}`);
             const objectFiles = [];
 
             // Compile board support files first
@@ -405,10 +418,10 @@ int main() {
             const systemFile = path.join(boardConfigPath, mcuSettings.systemFile);
 
             // Compile startup code (assembly)
-            output.push(`  Compiling ${boardConfig.mcu.model} startup code...`);
+            output.push(`  ${this.colors.yellow}Compiling ${boardConfig.mcu.model} startup code...${this.colors.reset}`);
             const startupResult = await this.compileFile(startupFile, workspacePath, options);
             if (!startupResult.success) {
-                errors.push('Failed to compile startup code:');
+                errors.push(`${this.colors.red}Failed to compile startup code:${this.colors.reset}`);
                 errors.push(startupResult.error || startupResult.stderr);
                 return {
                     success: false,
@@ -420,10 +433,10 @@ int main() {
             objectFiles.push(path.join(this.buildDir, path.basename(mcuSettings.startupFile, '.s') + '.o'));
 
             // Compile system initialization
-            output.push(`  Compiling ${boardConfig.mcu.model} system initialization...`);
+            output.push(`  ${this.colors.yellow}Compiling ${boardConfig.mcu.model} system initialization...${this.colors.reset}`);
             const systemResult = await this.compileFile(systemFile, workspacePath, options);
             if (!systemResult.success) {
-                errors.push('Failed to compile system initialization:');
+                errors.push(`${this.colors.red}Failed to compile system initialization:${this.colors.reset}`);
                 errors.push(systemResult.error || systemResult.stderr);
                 return {
                     success: false,
@@ -439,12 +452,12 @@ int main() {
             // Compile C++ files
             for (const cppFile of sourceFiles.cpp) {
                 const fileName = path.basename(cppFile);
-                output.push(`  Compiling ${fileName}...`);
+                output.push(`  ${this.colors.yellow}Compiling ${fileName}...${this.colors.reset}`);
 
                 const result = await this.compileFile(cppFile, workspacePath, options);
 
                 if (!result.success) {
-                    errors.push(`Failed to compile ${fileName}:`);
+                    errors.push(`${this.colors.red}Failed to compile ${fileName}:${this.colors.reset}`);
                     errors.push(result.error || result.stderr);
 
                     return {
@@ -465,12 +478,12 @@ int main() {
             // Compile C files
             for (const cFile of sourceFiles.c) {
                 const fileName = path.basename(cFile);
-                output.push(`  Compiling ${fileName}...`);
+                output.push(`  ${this.colors.yellow}Compiling ${fileName}...${this.colors.reset}`);
 
                 const result = await this.compileFile(cFile, workspacePath, options);
 
                 if (!result.success) {
-                    errors.push(`Failed to compile ${fileName}:`);
+                    errors.push(`${this.colors.red}Failed to compile ${fileName}:${this.colors.reset}`);
                     errors.push(result.error || result.stderr);
 
                     return {
@@ -490,11 +503,11 @@ int main() {
 
             // Compile the wrapper file if it was created
             if (wrapperPath) {
-                output.push(`  Compiling Arduino wrapper...`);
+                output.push(`  ${this.colors.yellow}Compiling Arduino wrapper...${this.colors.reset}`);
                 const wrapperResult = await this.compileFile(wrapperPath, workspacePath, options);
 
                 if (!wrapperResult.success) {
-                    errors.push(`Failed to compile wrapper:`);
+                    errors.push(`${this.colors.red}Failed to compile wrapper:${this.colors.reset}`);
                     errors.push(wrapperResult.error || wrapperResult.stderr);
 
                     return {
@@ -512,15 +525,15 @@ int main() {
                 objectFiles.push(wrapperObjFile);
             }
 
-            output.push(`Successfully compiled ${objectFiles.length} file(s)`);
+            output.push(`${this.colors.green}Successfully compiled ${objectFiles.length} file(s)${this.colors.reset}`);
             output.push('');
 
             // Link
-            output.push('Linking...');
+            output.push(`${this.colors.cyan}Linking...${this.colors.reset}`);
             const linkResult = await this.linkFiles(objectFiles, 'firmware.elf');
 
             if (!linkResult.success) {
-                errors.push('Linking failed:');
+                errors.push(`${this.colors.red}Linking failed:${this.colors.reset}`);
                 errors.push(linkResult.error || linkResult.stderr);
 
                 return {
@@ -531,28 +544,28 @@ int main() {
                 };
             }
 
-            output.push('Linking successful');
+            output.push(`${this.colors.green}Linking successful${this.colors.reset}`);
             output.push('');
 
             // Get binary size
-            output.push('Getting binary size...');
+            output.push(`${this.colors.cyan}Getting binary size...${this.colors.reset}`);
             const sizeResult = await this.getBinarySize(linkResult.outputPath);
 
             if (sizeResult.success && sizeResult.stdout) {
-                output.push(sizeResult.stdout.trim());
+                output.push(`${this.colors.white}${sizeResult.stdout.trim()}${this.colors.reset}`);
             }
             output.push('');
 
             // Convert to binary
-            output.push('Creating binary file...');
+            output.push(`${this.colors.cyan}Creating binary file...${this.colors.reset}`);
             const binResult = await this.elfToBin(linkResult.outputPath);
 
             if (binResult.success) {
-                output.push(`Binary created: ${binResult.binPath}`);
+                output.push(`${this.colors.green}Binary created: ${binResult.binPath}${this.colors.reset}`);
             }
 
             output.push('');
-            output.push('=== Compilation Complete ===');
+            output.push(`${this.colors.green}${this.colors.bright}=== Compilation Complete ===${this.colors.reset}`);
 
             return {
                 success: true,

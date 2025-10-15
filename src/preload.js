@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // ANSI to HTML conversion
+  convertAnsiToHtml: (text) => ipcRenderer.invoke('convert-ansi-to-html', text),
+
+
   // File operations
   saveFile: (path, content) => ipcRenderer.invoke('save-file', { path, content }),
   readWorkspaceFile: (filePath) => ipcRenderer.invoke('read-workspace-file', filePath),

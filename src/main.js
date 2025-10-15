@@ -6,12 +6,20 @@ const chokidar = require('chokidar');
 const SerialManager = require('./serial-manager');
 const MCUFlasher = require('./flasher');
 const ArmCompiler = require('./compilation');
+const AnsiToHtml = require('ansi-to-html');
 
 let mainWindow;
 let isDev = process.argv.includes('--dev');
 let serialManager = new SerialManager();
 let mcuFlasher = new MCUFlasher();
 let armCompiler = new ArmCompiler();
+let ansiConverter = new AnsiToHtml({
+  fg: '#d4d4d4',
+  bg: '#1e1e1e',
+  newline: false,
+  escapeXML: true,
+  stream: false
+});
 let currentWorkspace = null;
 let fileWatcher = null;
 
@@ -31,10 +39,8 @@ function createWindow() {
 
   mainWindow.loadFile('src/index.html');
 
-  // Uncomment to open DevTools in dev mode
-  // if (isDev) {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  // Open DevTools to debug
+  mainWindow.webContents.openDevTools();
 
   createMenu();
 }
@@ -273,6 +279,15 @@ async function refreshSerialPorts() {
 }
 
 // IPC handlers
+ipcMain.handle('convert-ansi-to-html', async (event, text) => {
+  try {
+    return ansiConverter.toHtml(text);
+  } catch (error) {
+    console.error('Error converting ANSI to HTML:', error);
+    return text; // Return original text if conversion fails
+  }
+});
+
 ipcMain.handle('save-file', async (event, { path, content }) => {
   try {
     fs.writeFileSync(path, content, 'utf8');
@@ -558,6 +573,13 @@ void loop() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
+  // Clean up workspace when all windows are closed
+  currentWorkspace = null;
+  if (fileWatcher) {
+    fileWatcher.close();
+    fileWatcher = null;
+  }
+
   if (process.platform !== 'darwin') {
     app.quit();
   }

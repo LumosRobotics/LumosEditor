@@ -953,7 +953,6 @@ class LumosEditor {
             const result = await window.electronAPI.saveFile(tab.filePath, content);
             if (result.success) {
                 this.markTabModified(this.activeTab, false);
-                this.addToConsole('File saved successfully');
             } else {
                 this.addToConsole(`Error saving file: ${result.error}`);
             }
@@ -979,7 +978,6 @@ class LumosEditor {
             this.updateTabTitle(this.activeTab);
             this.markTabModified(this.activeTab, false);
             this.updateStatusFile(filePath);
-            this.addToConsole('File saved successfully');
         } else {
             this.addToConsole(`Error saving file: ${result.error}`);
         }
@@ -1457,8 +1455,8 @@ class LumosEditor {
             // Hide workspace info
             document.getElementById('workspace-info').classList.add('hidden');
 
-            // Show "no folder" message and hide file tree
-            document.getElementById('no-folder-message').style.display = 'block';
+            // Hide "no folder" message and file tree (welcome screen is the only thing shown)
+            document.getElementById('no-folder-message').style.display = 'none';
             document.getElementById('file-tree').classList.add('hidden');
         }
     }
@@ -1585,7 +1583,6 @@ class LumosEditor {
         } else {
             // No unsaved changes, automatically reload
             await this.reloadFileFromDisk(tabId, filePath);
-            this.addToConsole(`${tab.fileName} reloaded (changed externally)`);
         }
     }
 
@@ -1677,11 +1674,19 @@ class LumosEditor {
         this.addToPanel('build-output', message, 'output');
     }
 
-    addToPanel(panelId, message, type = 'info') {
+    async addToPanel(panelId, message, type = 'info') {
         const panel = document.getElementById(panelId);
         const timestamp = new Date().toLocaleTimeString();
-        const line = `[${timestamp}] ${message}\n`;
-        panel.textContent += line;
+        const line = `[${timestamp}] ${message}`;
+
+        // Convert ANSI codes to HTML (sanitized) using the exposed function
+        const htmlLine = await window.electronAPI.convertAnsiToHtml(line);
+
+        // Create div for each line instead of using textContent
+        const lineDiv = document.createElement('div');
+        lineDiv.innerHTML = htmlLine;
+        panel.appendChild(lineDiv);
+
         panel.scrollTop = panel.scrollHeight;
     }
 }
