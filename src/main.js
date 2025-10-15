@@ -5,11 +5,13 @@ const { SerialPort } = require('serialport');
 const chokidar = require('chokidar');
 const SerialManager = require('./serial-manager');
 const MCUFlasher = require('./flasher');
+const ArmCompiler = require('./compilation');
 
 let mainWindow;
 let isDev = process.argv.includes('--dev');
 let serialManager = new SerialManager();
 let mcuFlasher = new MCUFlasher();
+let armCompiler = new ArmCompiler();
 let currentWorkspace = null;
 let fileWatcher = null;
 
@@ -29,9 +31,10 @@ function createWindow() {
 
   mainWindow.loadFile('src/index.html');
 
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
+  // Uncomment to open DevTools in dev mode
+  // if (isDev) {
+  //   mainWindow.webContents.openDevTools();
+  // }
 
   createMenu();
 }
@@ -164,7 +167,7 @@ async function setWorkspace(folderPath) {
 
   // Set up file watcher for the new workspace
   fileWatcher = chokidar.watch(folderPath, {
-    ignored: /(^|[\/\\])\.((?!lumos_ws).)+/, // ignore dotfiles except .lumos_ws
+    ignored: /(^|[\/\\])\.((?!lumos).)+/, // ignore dotfiles except .lumos and .lumos_ws
     persistent: true,
     ignoreInitial: false,
     depth: 10
@@ -222,8 +225,8 @@ async function buildFileTree(dirPath) {
     const tree = [];
 
     for (const item of items) {
-      // Skip hidden files and directories, but keep .lumos_ws
-      if (item.name.startsWith('.') && item.name !== '.lumos_ws') continue;
+      // Skip hidden files and directories, but keep .lumos and .lumos_ws
+      if (item.name.startsWith('.') && item.name !== '.lumos_ws' && item.name !== '.lumos') continue;
 
       const itemPath = path.join(dirPath, item.name);
       const relativePath = path.relative(currentWorkspace, itemPath);
@@ -308,66 +311,30 @@ ipcMain.handle('compile-code', async (event, { code, boardType }) => {
   }
 });
 
-ipcMain.handle('compile-with-arm-gcc', async (event, { code, boardType }) => {
+ipcMain.handle('compile-with-arm-gcc', async (event) => {
   try {
-    // Call the ARM GCC compiler binary
-    const { spawn } = require('child_process');
+    // Check if workspace is open
+    if (!currentWorkspace) {
+      return {
+        success: false,
+        error: 'No workspace open. Please open a folder first.',
+        output: ''
+      };
+    }
 
-    // Get the path to the ARM GCC binary
-    const armGccPath = path.join(__dirname, 'bin', 'gcc-arm-none-eabi-10.3-2021.10', 'bin', 'arm-none-eabi-g++');
+    console.log('Compiling workspace with ARM GCC:', currentWorkspace);
 
-    console.log('Attempting to call ARM GCC at:', armGccPath);
-
-    // For now, just call the binary without arguments to test
-    const result = await new Promise((resolve) => {
-      const child = spawn(armGccPath, [], {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code) => {
-        resolve({
-          success: true, // We'll consider it successful if the binary runs
-          output: stdout,
-          error: stderr,
-          code: code,
-          message: `ARM GCC called successfully (exit code: ${code})`
-        });
-      });
-
-      child.on('error', (error) => {
-        resolve({
-          success: false,
-          error: error.message,
-          message: `Failed to call ARM GCC: ${error.message}`
-        });
-      });
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        child.kill();
-        resolve({
-          success: false,
-          error: 'Command timed out',
-          message: 'ARM GCC command timed out'
-        });
-      }, 5000);
-    });
+    // Compile the entire workspace
+    const result = await armCompiler.compileWorkspace(currentWorkspace);
 
     return result;
   } catch (error) {
-    console.error('Error calling ARM GCC:', error);
-    return { success: false, error: error.message };
+    console.error('Error compiling with ARM GCC:', error);
+    return {
+      success: false,
+      error: error.message,
+      output: ''
+    };
   }
 });
 

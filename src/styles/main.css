@@ -358,11 +358,13 @@ body.light-theme {
     color: #ff6b6b;
 }
 
-/* Hide sidebar, editor, bottom panel, and resize handle when no workspace */
+/* Hide sidebar, editor, bottom panel, resize handle, and action buttons when no workspace */
 body.no-workspace #sidebar,
 body.no-workspace #editor-container,
 body.no-workspace #bottom-panel,
-body.no-workspace .resize-handle {
+body.no-workspace .resize-handle,
+body.no-workspace .compile-btn,
+body.no-workspace .flash-btn {
     display: none;
 }
 
@@ -378,7 +380,7 @@ body.no-workspace .resize-handle {
     flex-shrink: 0;
 }
 
-/* Resize handle */
+/* Resize handle (vertical) */
 .resize-handle {
     width: 4px;
     background-color: transparent;
@@ -388,6 +390,20 @@ body.no-workspace .resize-handle {
 }
 
 .resize-handle.resizing {
+    background-color: var(--accent-color);
+}
+
+/* Resize handle (horizontal) for bottom panel */
+.resize-handle-horizontal {
+    height: 4px;
+    background-color: transparent;
+    cursor: row-resize;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.resize-handle-horizontal.resizing {
     background-color: var(--accent-color);
 }
 
@@ -744,16 +760,21 @@ body.light-theme .tab.modified .tab-close::before {
 #panel-content {
     flex: 1;
     position: relative;
+    overflow: hidden;
 }
 
 .panel {
     display: none;
-    height: 100%;
-    padding: 12px;
-    overflow-y: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     font-family: 'Courier New', monospace;
     font-size: 12px;
     line-height: 1.4;
+    overflow-y: auto;
+    padding: 12px;
 }
 
 .panel.active {

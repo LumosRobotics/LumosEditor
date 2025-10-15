@@ -59,6 +59,7 @@ class LumosEditor {
         this.setupPanelSwitching();
         this.setupContextMenu();
         this.setupSidebarResize();
+        this.setupBottomPanelResize();
         await this.loadWorkspace();
         this.loadRecentDirectories();
     }
@@ -490,6 +491,55 @@ class LumosEditor {
 
                 // Save width to localStorage
                 localStorage.setItem('lumosSidebarWidth', sidebar.offsetWidth);
+            }
+        });
+    }
+
+    setupBottomPanelResize() {
+        const resizeHandle = document.getElementById('bottom-panel-resize-handle');
+        const bottomPanel = document.getElementById('bottom-panel');
+        let isResizing = false;
+        let startY = 0;
+        let startHeight = 0;
+
+        // Load saved height from localStorage
+        const savedHeight = localStorage.getItem('lumosBottomPanelHeight');
+        if (savedHeight) {
+            bottomPanel.style.height = savedHeight + 'px';
+        }
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startY = e.clientY;
+            startHeight = bottomPanel.offsetHeight;
+            resizeHandle.classList.add('resizing');
+            document.body.style.cursor = 'row-resize';
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const delta = startY - e.clientY;
+            const newHeight = startHeight + delta;
+
+            // Respect min and max height
+            const minHeight = 100;
+            const maxHeight = 600;
+            const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+
+            bottomPanel.style.height = clampedHeight + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                resizeHandle.classList.remove('resizing');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+
+                // Save height to localStorage
+                localStorage.setItem('lumosBottomPanelHeight', bottomPanel.offsetHeight);
             }
         });
     }
@@ -1204,15 +1254,9 @@ class LumosEditor {
     async compileCode() {
         const boardType = document.getElementById('board-select').value;
 
-        // Get code from active tab's model
-        let code = '';
-        if (this.activeTab) {
-            const tab = this.openTabs.get(this.activeTab);
-            code = tab.model.getValue();
-        }
-
-        if (!code.trim()) {
-            this.addToConsole('No code to compile');
+        // Check if workspace is open
+        if (!this.currentWorkspace) {
+            this.addToConsole('No workspace open. Please open a folder first.');
             return;
         }
 
@@ -1221,34 +1265,48 @@ class LumosEditor {
             return;
         }
 
-        this.addToConsole(`Compiling with ARM GCC for ${boardType}...`);
+        this.addToConsole(`Compiling workspace with ARM GCC for ${boardType}...`);
         this.showPanel('output');
 
+        // Clear previous output
+        document.getElementById('build-output').textContent = '';
+
         try {
-            // Call the ARM GCC compiler binary
-            const result = await window.electronAPI.compileWithArmGcc(code, boardType);
+            // Compile the entire workspace
+            const result = await window.electronAPI.compileWithArmGcc();
+
             if (result.success) {
                 this.addToConsole('ARM GCC compilation successful!');
-                this.addToOutput('ARM GCC compilation successful!');
 
-                // Show stdout and stderr in both console and output
+                // Display the detailed output
                 if (result.output) {
-                    this.addToConsole(`ARM GCC stdout: ${result.output}`);
                     this.addToOutput(result.output);
                 }
-                if (result.error) {
-                    this.addToConsole(`ARM GCC stderr: ${result.error}`);
-                    this.addToOutput(result.error);
-                }
 
-                this.addToConsole(`ARM GCC exit code: ${result.code}`);
+                // Display paths to generated files
+                if (result.elfPath) {
+                    this.addToConsole(`ELF file: ${result.elfPath}`);
+                }
+                if (result.binPath) {
+                    this.addToConsole(`Binary file: ${result.binPath}`);
+                }
             } else {
-                this.addToConsole(`ARM GCC compilation failed: ${result.error}`);
-                this.addToOutput(`ARM GCC compilation failed: ${result.error}`);
+                this.addToConsole(`ARM GCC compilation failed`);
 
+                // Display the detailed output (includes error info)
                 if (result.output) {
-                    this.addToConsole(`ARM GCC output: ${result.output}`);
                     this.addToOutput(result.output);
+                }
+
+                // Display error message
+                if (result.error) {
+                    this.addToConsole(`Error: ${result.error}`);
+                    this.addToOutput(`\nError: ${result.error}`);
+                }
+
+                // Display stderr if available
+                if (result.stderr) {
+                    this.addToOutput(`\nCompiler errors:\n${result.stderr}`);
                 }
             }
         } catch (error) {
