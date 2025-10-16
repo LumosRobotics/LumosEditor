@@ -1160,7 +1160,12 @@ class LumosEditor {
             renderLineHighlight: 'none',
             minimap: { enabled: false }
         });
-        monaco.editor.setModelLanguage(this.editor.getModel(), 'plaintext');
+
+        // Only set language if model exists
+        const model = this.editor.getModel();
+        if (model) {
+            monaco.editor.setModelLanguage(model, 'plaintext');
+        }
     }
 
     markTabModified(tabId, modified) {

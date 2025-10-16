@@ -530,6 +530,23 @@ body.no-workspace .flash-btn {
     font-weight: 500;
 }
 
+/* Folder expand/collapse arrow */
+.file-item.directory::before {
+    content: '›';
+    display: inline-block;
+    width: 12px;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+    transform: rotate(0deg);
+    flex-shrink: 0;
+}
+
+.file-item.directory.expanded::before {
+    transform: rotate(90deg);
+}
+
 .file-icon {
     width: 16px;
     height: 16px;
